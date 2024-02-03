@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import { db } from "./firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import Form from "react-bootstrap/Form";
 import Card from 'react-bootstrap/Card';
 import Button from 'react-bootstrap/Button';
@@ -11,23 +11,33 @@ function Home() {
     const [week,  setWeek] = useState(0);
     const [members, setMembers] = useState("");
     const [progress, setProgress] = useState("");
+    const [prog, setProg] = useState([]);
 
     const progressCollectionRef = collection(db, "progress");
 
+    const getProg = async () => {
+        const data = await getDocs(progressCollectionRef);
+        setProg(data.docs.map((doc) => doc.data()))
+    };
+
+    useEffect(() => {
+        getProg()
+    }, [])
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log({
-            teamNumber: teamNum,
-            weekNum: week,
-            teamMembers: members,
-            teamProgress: progress
-        });
-        await addDoc(progressCollectionRef, {
-            teamNumber: teamNum,
-            weekNum: week,
-            teamMembers: members,
-            teamProgress: progress
-        })
+        
+        if(prog.find((d) => (d.teamNumber === teamNum) && (d.weekNum === week))) {
+            alert(`You or your team member has already logged the progress for week ${week}`)
+        } else {
+            await addDoc(progressCollectionRef, {
+                teamNumber: teamNum,
+                weekNum: week,
+                teamMembers: members,
+                teamProgress: progress
+            })
+        }
+
         e.target.reset();
     }
 
